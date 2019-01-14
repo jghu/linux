@@ -1,0 +1,505 @@
+for循环详解
+
+for循环语法结构
+•  python中的for接受可迭代对象(例如序列或迭代器)作为其参数,每次迭代其中一个元素
+for	iter_var	in	iterable:         #for  条件：
+				suite_to_repeat             #command
+•  与while循环一样,支持break、continue、else语句
+•  一般情况下,循环次数未知采用while循环,循环次数已知,采用for循环
+
+range函数
+•  for循环常与range函数一起使用
+•  range函数提供循环条件
+•  range函数的完整语法为:
+        range(start, end, step =1)     #起始/结束/间隔
+
+
+str = "python"
+alist = [1,2,3,10]
+atupl = ("bob","haha","xixi")
+adict = {"name":"harry","age":20}
+
+for ch in str:
+    print(ch)       #依次打印变量str中的字符
+
+for i in alist:
+    print(i)
+
+for name in atupl:
+    print(name)
+
+for key in adict:
+    print("%s:%s" % (key,adict[key]))   #占位符的运用
+
+range函数：可以生成一系列的数字
+>>> range(10)                  #只有一个参数，是结束数字，结束数字不包含
+range(0, 10)
+>>> list(range(10))
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> list(range(0,10))         #列出范围从0到9的所有值：10个数，不包含10
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> list(range(6,11))          #列出范围从6到9的所有值：10个数，不包含10
+[6, 7, 8, 9, 10]
+>>> list(range(1,10,2))        #列出1到10，步长为2的值，即奇数
+[1, 3, 5, 7, 9]
+>>> list(range(2,10,2))         #偶数
+[2, 4, 6, 8]
+>>> list(range(10,1,-1))         #从10到1依次排列，即从大到小的连续排列
+[10, 9, 8, 7, 6, 5, 4, 3, 2]
+>>> list(range(10,1,-2))
+[10, 8, 6, 4, 2]
+
+
+#斐波那契数列
+斐波那契数列就是某一个数,总是前两个数之和,比如0,1,1,2,3,5,8
+思路：最后两个数字相加，得新的一个数
+
+写10个数，某一个数,总是前两个数之和
+
+number = [0,1]                                                     #定义初始两位数的值
+for i in range(8):                                                   #已定义了两位，故需要再执行8次
+    number.append(number[-2] + number[-1])    #取变量的最后一位和最后第二位
+print(number)                                                      #输出[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+
+
+99乘法表
+1. 思路版:for循环嵌套
+for i in range(9):         #定义控制行
+    for j in range(9):     #执行几次，可控制行内打印hello次数,成列
+        print("hello")     #print自带的回车功能，使得打印成一列
+
+for i in range(9):         #定义控制行
+    for j in range(9):     #执行几次，可控制行内打印hello次数,成列
+        print("hello",end='')  #end=''  抑制print自带的回车
+
+打印成一行了
+
+for i in range(9):         #定义控制行
+    for j in range(9):     #执行几次，可控制行内打印hello次数,成列
+        print("hello",end='')  #end=''  抑制print自带的回车
+    print()    #定义每次执行变量i 后回车
+
+#目的：成几何形式呈现
+for i in range(9):         #定义控制行
+    for j in range(i + 1):     #执行几次，可控制行内打印hello次数,成列
+        print("hello",end='')  #end=''  抑制print自带的回车
+    print()    #定义每次执行变量i 后回车
+
+2.简陋版
+for i in range(1,10):
+    for j in range(1,i +1):
+        print(i * j,end=' ')
+    print()
+
+#3.终极版
+for i in range(1,10):
+    for j in range(1,i +1):
+        print('%s * %s = %s' % ( j , i , i * j ),end='   ')
+    print()
+
+
+
+列表解析：列表推导式
+用于快速/便捷的生成列表
+•  它是一个非常有用、简单、而且灵活的工具,可以用来动态地创建列表
+•  语法:
+	[expr	for	iter_var	in	iterable]
+•  这个语句的核心是for循环,它迭代iterable对象的所有条目
+•  expr应用于序列的每个成员,最后的结果值是该表达式产生的列表
+
+思路分解版：
+>>> [10]
+[10]
+>>> [10 + 5]
+[15]
+>>> [10 + 5 for i in range(10)]    #有循环决定计算几次10+5
+[15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+>>> [10 + i for i in range(10)]
+[10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+>>> [10 + i for i in range(10) if i % 2 == 0]  #满足if条件才把10+i 的值保留（偶数）
+[10, 12, 14, 16, 18]
+
+如何用列表解析，生成192.168.1.0/24网段中的IP地址？
+方式一：
+num1 = "192.168.1."
+for i in range(255):
+    print(num1 + str(i))
+
+方式二：
+for i in range(255):
+    print("192.168.1." + str(i))
+
+方式三：
+for i in range(255):
+    print("192.168.1.%s" % i )
+
+
+
+文件操作的三步骤：
+1、打开文件
+2、读写
+3、关闭
+
+open及file内建函数
+•  作为打开文件之门的“钥匙”,内建函数open()以及file()提供了初始化输入/输出(I/O)操作的通用接口
+•  成功打开文件后时候会返回一个文件对象,否则引发一个错误
+•  open()方法和file()方法可以完全相互替换
+•  基本语法:
+file_object	=	open(file_name,	access_mode='r',	buffering=-1)
+
+文件对象访问模式
+文件模式                   操作
+    r                 以读方式打开(文件不存在则报错)
+    w               以写方式打开(文件存在则清空,不存在则创建)
+    a                以追加模式打开(必要时创建新文件)
+    r+              以读写模式打开(参见r)
+    w+             以读写模式打开(参见w)
+    a+              以读写模式打开(参见a)
+    b                以二进制模式打开
+
+
+主要思路：通过缓存中间者
+
+只读方式打开（r）：
+read方法
+•  read()方法用来直接读取字节到字符串中,最多读取给定数目个字节
+•  如果没有给定size参数(默认值为-1)或者size值为负,文件将被读取直至末尾
+>>>	data	=	fobj.read()
+>>>	print(data)
+
+[root@room8pc16 day02]# cp /etc/passwd /tmp/
+>>> fobj = open('/tmp/passwd')   # 默认以r方式打开
+>>> data = fobj.read()   # 默认读取全部数据
+>>> print(data)              #打印出data所有内容
+>>> data = fobj.read()    # 文件读完以后，再读取就没有数据可以读入了（书签标记法似的）
+>>> print(data)
+>>> data
+''                                        #数据为空了
+>>> fobj.close()               #关闭对文件的读取模式
+>>> fobj = open('/tmp/passwd')
+>>> fobj.read(4)              # 读取4字节的内容----->建议读4096字节
+'root'
+>>> fobj.read(4)              #继续读取4字节时，不是重新开始读起，而是顺着之前读取完成后的标签位置开始读
+':x:0'
+>>> fobj.close()
+
+readline方法
+•  读取打开文件的一行(读取下个行结束符之前的所有字节)
+•  然后整行,包括行结束符,作为字符串返回
+•  它也有一个可选的size参数,默认为-1,代表读至行结束符
+•  如果提供了该参数,那么在超过size个字节后会返回不完整的行
+>>>	data	=	fobj.readline()
+>>>	print(data)
+
+readlines方法
+•  readlines()方法读取所有(剩余的)行然后把它们作为一个字符串列表返回
+>>>	data	=	fobj.readlines()
+>>>	print(data)
+
+>>> fobj = open('/tmp/passwd')
+>>> fobj.readline()          # 读一行
+>>> fobj.readlines()        # 将所有行读到列表中
+>>> fobj.close()
+
+
+文件迭代
+•  如果需要逐行处理文件,可以结合for循环迭代文件
+•  迭代文件的方法与处理其他序列类型的数据类似
+>>>	fobj	=	open('star.py')
+>>>	for	eachLine	in	fobj:
+...     print(eachLine,	end=	'')
+
+>>> fobj = open('/tmp/passwd')
+>>> for line in fobj:
+...     print(line, end='')       # 每一行结束已经有换行了，print不要再额外打印换行
+
+>>> fobj.close()
+
+
+二进制模式打开
+如果读取的是二进制文件(命令程序、图片、视频、声音)，需要加上b表示bytes
+>>> fobj = open('/bin/ls', 'rb')
+>>> fobj.read(2)
+b'\x7fE'    # b表示bytes,  \x表示后面的数字是16进制数
+>>> fobj.close()
+>>> fobj = open('/tmp/passwd', 'rb')
+>>> fobj.read(4)
+b'root'
+>>> fobj.close()
+
+
+write方法
+•  write()内建方法功能与read()和readline()相反。它把含有文本数据或二进制数据块的字符串写入到文件中去
+•  写入文件时,不会自动添加行结束标志,需要程序员手工输入
+
+writelines方法
+•  和readlines()一样,writelines()方法是针对列表的操
+•  它接受一个字符串列表作为参数,将它们写入文件
+•  行结束符并不会被自动加入,所以如果需要的话,必须在调用writelines()前给每行结尾加上行结束符
+
+写文件：注意如果以w方式打开文件，如果文件不存在则创建，如果已存在则清空。
+>>> fobj = open("/tmp/passwd" ,"w")   #数据没有立即写入磁盘，而是写到缓存区，积累到一定量量时才会同步至磁盘
+>>> fobj.write('Hello World!\n')
+12                                       #表示写入了12个字符
+>>> fobj.flush()                 # 立即将数据同步到磁盘
+>>> fobj.writelines(['2nd line.\n', '3rd line.\n'])
+
+>>> fobj.read(4)                 #处于写的状态，无法直接读，需推出写，进入读
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+
+>>> fobj.close()
+>>> fobj = open("/tmp/passwd","r")
+>>> fobj.read()
+'hello world\n2nd line.\n3rd line.\n'
+
+
+with: with语句打开文件后，with语句结束，文件自动关闭
+>>> with open('/tmp/passwd') as fobj:
+...   fobj.readline()
+>>> fobj.readline()   # 报错，因为文件已经关闭
+
+
+文件内移动指针：非重点
+# seek的两个参数，第二个数字是相对位置，0表示开头，1表示当前位置，2表示结尾
+# seek的两个参数，第一个数字是偏移量
+>>> fobj = open('/tmp/passwd', 'rb')
+>>> fobj.seek(6, 0)   # 从开头向右移6字节
+6
+>>> fobj.read(5)
+b'World'
+>>> fobj.seek(2, 1)   # 从当前位置向右移2字节
+13
+>>> fobj.read(3)
+b'2nd'
+>>> fobj.seek(-6, 2)   # 从结尾向左移6字节
+27
+>>> fobj.read()
+b'line.\n'
+
+标准文件
+•  程序一执行,就可以访问三个标准文件
+–  标准输入:一般是键盘,使用sys.stdin
+–  标准输出:一般是显示器缓冲输出,使用sys.stdout
+–  标准错误:一般是显示器的非缓冲输出,使用sys.stderr
+>>>	import	sys
+>>>	sys.stdout.write('hello	world!\n')
+hello	world!
+>>>	hi	=	sys.stdin.readline()
+hello
+>>>	hi
+'hello\n'
+
+
+模拟cp操作
+1.  创建cp.py文件
+2.  将/bin/ls“拷贝”到/root/目录下
+3.  不要修改原始文件
+
+拷贝：
+方式一：
+f1 = open("/bin/ls","rb")
+f2 = open("/tmp/list" , "wb")
+
+data = f1.read()
+f2.write(data)
+
+f1.close()
+f2.close()
+
+方式二：
+stc_fname  = "/bin/ls"
+dst_fname = "/tmp/list"
+with open(stc_fname,"rb") as src_fobj:
+    with open(dst_fname,"wb") as dst_fobj:
+        while True:
+            data = src_fobj.read(4096)
+            if len(data) ==0:
+                break
+            dst_fobj.write(data)
+
+方式三：
+stc_fname  = "/bin/ls"
+dst_fname = "/tmp/list"
+with open(stc_fname,"rb") as src_fobj:
+    with open(dst_fname,"wb") as dst_fobj:
+        while True:
+            data = src_fobj.read(4096)
+            if len(data)  == b'':
+                break
+            dst_fobj.write(data)
+
+方式四：
+stc_fname  = "/bin/ls"
+dst_fname = "/tmp/list"
+with open(stc_fname,"rb") as src_fobj:
+    with open(dst_fname,"wb") as dst_fobj:
+        while True:
+            data = src_fobj.read(4096)
+            if not data:
+                break
+            dst_fobj.write(data)
+
+
+方式五：
+import  sys
+def copy(stc_fname,dst_fname):
+        with open(stc_fname,"rb") as src_fobj:
+            with open(dst_fname,"wb") as dst_fobj:
+                while True:
+                    data = src_fobj.read(4096)
+                    if not data:
+                        break
+                    dst_fobj.write(data)
+
+copy(sys.argv[1],sys.argv[2])
+
+python3 fib_funtioncp.py  /etc/passwd   /tmp/mima
+[root@room9pc01 day03]# python3 /var/ftp/python/day03/test03.py /tmp/passwd /tmp/mima
+[root@room9pc01 day03]# ls /tmp/mima
+/tmp/mima
+[root@room9pc01 day03]# md5sum /tmp/mima /tmp/passwd
+8cce6434cb8a161f9566f0d05e9979bd  /tmp/mima
+8cce6434cb8a161f9566f0d05e9979bd  /tmp/passwd
+
+
+
+函数基本概念
+•  函数是对程序逻辑进行结构化或过程化的一种编程方法
+•  将整块代码巧妙地隔离成易于管理的小块
+•  把重复代码放到函数中而不是进行大量的拷贝,这样既能节省空间,也有助于保持一致性
+•  通常函数都是用于实现某一种功能
+
+创建函数
+•  函数是用def语句来创建的,语法如下:
+def	funcOon_name(arguments):
+				"funcOon_documentaOon_string"
+				funcOon_body_suite
+•  标题行由def关键字,函数的名字,以及参数的集合(如果有的话)组成
+•  def子句的剩余部分包括了一个虽然可选但是强烈推荐的文档字串,和必需的函数体
+
+调用函数
+•  同大多数语言相同,python用一对圆括号调用函数
+•  如果没有加圆括号,只是对函数的引用
+>>>	def	foo():
+...					print('hello')
+...
+>>>	foo()
+hello
+>>>	foo
+<funcOon	foo	at	0x7ff2328967d0>
+
+函数的返回值
+•  多数情况下,函数并不直接输出数据,而是向调用者返回值
+•  函数的返回值使用return关键字
+•  没有return的话,函数默认返回None
+>>>	def	foo():
+...									res	=	3	+	4
+>>>	i	=	foo()
+>>>	print	i
+None
+
+定义参数
+•  形式参数
+–  函数定义时,紧跟在函数名后(圆括号内)的参数被称为形式参数,简称形参。由于它不是实际存在变量,所以又称虚拟变量
+•  实际参数
+–  在主调函数中调用一个函数时,函数名后面括弧中的参数(可以是一个表达式)称为“实际参数”,简称实参传递参数
+•  调用函数时,实参的个数需要与形参个数一致
+•  实参将依次传递给形参
+>>>	def	foo(x,	y):
+...										print('x=%d,	y=%d'	%	(x,	y))
+>>>	foo()
+Traceback	(most	recent	call	last):
+		File	"<stdin>",	line	1,	in	<module>
+TypeError:	foo()	takes	exactly	2	arguments	(0	given)
+>>>	foo(3)
+Traceback	(most	recent	call	last):
+		File	"<stdin>",	line	1,	in	<module>
+TypeError:	foo()	takes	exactly	2	arguments	(1	given)
+>>>	foo(3,	4)
+x=3,	y=4	位置参数
+•  与shell脚本类似,程序名以及参数都以位置参数的方式传递给python程序
+•  使用sys模块的argv列表接收
+[root@zzghost1	day02]#	vim	args.py
+#!/usr/bin/env	python3
+import	sys
+print	sys.argv
+
+[root@zzghost1	day02]#	./args.py	hello	world
+['./args.py',	'hello',	'world']	默认参数
+•  默认参数就是声明了默认值的参数
+•  因为给参数赋予了默认值,所以在函数调用时,不向该参数传入值也是允许的
+>>>	def	pstar(num	=	30):
+...									print('*'	*	num)
+...
+>>>	pstar()
+******************************
+>>>	pstar(40)
+****************************************
+
+
+def gen_fib():    #定义函数
+    fib = [0,1]
+    for i in range(8):
+        fib.append( fib[-1] + fib[-2])
+    print(fib)
+
+gen_fib()     #调用函数，可多次调用
+gen_fib()
+
+def gen_fib(length):    #定义函数
+    fib = [0,1]
+    for i in range(length -2):
+        fib.append( fib[-1] + fib[-2])
+    print(fib)
+
+gen_fib(10)     #调用函数，可多次调用
+gen_fib(20)
+
+def gen_fib(length):    #定义函数,,函数需要处理的数据，需要参数传进去
+    fib = [0,1]
+    for i in range(length -2):
+        fib.append( fib[-1] + fib[-2])
+    return fib      #函数执行结束后 ，用return返回处理结果，没有return,放回none
+
+print(gen_fib(10))     #调用函数，可多次调用
+
+def gen_fib(length):    #定义函数,,函数需要处理的数据，需要参数传进去
+    fib = [0,1]
+    for i in range(length -2):
+        fib.append( fib[-1] + fib[-2])
+    return fib      #函数执行结束后 ，用return返回处理结果，没有return,放回none
+
+a = gen_fib(10)    #调用函数，可多次调用
+print(a)
+b = gen_fib(20)
+with open("/tmp/fib.txt","w") as fobj:
+    fobj.write(str(b))    #文件只能写字符串
+
+验证
+[root@room9pc01 linux]# cat /tmp/fib.txt
+[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181]
+
+
+
+模块：一个以.py作为扩展名的python程序文件就是一个模块。
+模块名：把python程序文件的.py去除，前面部分就是模块名
+# vim star.py
+hi = 'Hello World'
+
+def pstar(n=30):
+    print('*' * n)
+
+pstar()   # 调用函数时，没有指定参数，就使用函数默认的参数值
+pstar(50)
+[root@room8pc16 day03]# python3
+>>> import star   # 导入模块时，模块中的代码将会执行一遍
+******************************
+**************************************************
+>>> import star    # 不管导入同一个模块多少次，只以第一次为准
+>>> star.pstar()
+>>> star.hi
+
+
+模块文件有一个特殊的变量叫__name__，如果模块文件直接运行，它的值是__main__，
+如果模块是被导入的，它的值是模块名
