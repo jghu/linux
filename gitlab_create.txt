@@ -1,0 +1,199 @@
+Git简介
+•  Git是一个开源的分布式版本控制系统,用于敏捷高效地处理任何或小或大的项目。
+•  Git 是 Linus Torvalds 为了帮助管理 Linux 内核开发而开发的一个开放源码的版本控制软件。
+•  Git 与常用的版本控制工具 CVS, Subversion 等不同,它采用了分布式版本库的方式,不必服务器端软件支持。
+
+
+安装及配置
+•  Git安装后需配置用户相关信息
+
+[root@node2 ~]# yum install -y git              //git安装包一般镜像自带
+[root@node2 ~]# git config --list               //查看现有那些git库及信息
+[root@node2 ~]# git config --global user.name "zzg"   //设置用户信息:用户名
+[root@node2 ~]# git config --global user.email "zzg@tedu.cn"   //设置用户信息:邮箱
+[root@node2 ~]# git config --global core.editor vim  //设置默认编辑器为vim
+[root@node2 ~]# git config --list
+[root@node2 ~]# cat ~/.gitconfig    //设置内容存储路径
+[user]
+	name = zzg
+	email = zzg@tedu.cn
+[core]
+	editor = vim
+
+Git工作流程--->熟悉
+
+git工作的三个重要区域：
+工作区：写代码的那个目录(工作副本)
+暂存区：工作区和版本库之间的一个过渡区域
+版本库：真正存储各个版本的位置，是工作目录的隐藏目录.git
+
+git应用
+•  Git 使用 git init 命令来初始化一个 Git 仓库,Git 的很多命令都需要在 Git 的仓库中运行,所以 git init是使用 Git 的第一个命令
+
+1、初始化使用git管理的项目
+[root@node2 ~]# make devops
+[root@node2 ~]# git init devops
+或者
+[root@node2 ~]# cd devops/
+[root@node2 ~]# git init       //区别在于原库中是否存在数据
+[root@node2 ~]# ls -a devops/
+.  ..  .git
+
+2、在项目中编写代码
+[root@node2 ~]# cd devops/
+[root@node2 devops]# vim hi.py
+print('Hello World!')
+
+3、提交代码到暂存区
+[root@node2 devops]# git add .  //添加所有文件
+也可以通过指定文件添加  git add hi.py
+
+4、查看暂存区
+[root@node2 devops]# git status
+
+5、撤出暂存区
+[root@node2 devops]# git rm --cached hi.py
+
+6、提交文件到版本库
+！！注意：提交之前务必先设置用户信息
+[root@node2 devops]# git add .
+[root@node2 devops]# git commit -m "project init"  //-m 添加注释说明
+[root@node2 devops]# git log   //查看记录
+
+7、查看版本库中的文件
+[root@node2 devops]# git ls-files
+
+8、误删除后，重新检出文件
+[root@node2 devops]# git rm hi.py
+[root@node2 devops]# git status     //可列出异样信息，根据异常提示，修改
+[root@node2 devops]# git reset HEAD hi.py      //重置，撤销原操作
+[root@node2 devops]# git checkout  --  hi.py   //检测更新
+
+
+搭建本地gitlab服务器
+1、要求，准备一台虚拟机，内存4G以上（搭建一台gitlab的工程较大，直接使用已封装好的docker）
+思路：node1 -> 192.168.1.1 安装docker，导入gitlab镜像
+
+2、安装、启动docker（提前准备好docker安装包及gitlab的docker容器）
+[root@node1 docker_pkgs]# yum install -y docker
+[root@node1 docker_pkgs]# systemctl start docker
+[root@node1 docker_pkgs]# systemctl enable docker
+
+3、导入镜像
+[root@node1 docker]# docker load < images/gitlab_zh.tar
+[root@localhost ~]# docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+gitlab_zh           latest              1f71f185271a        10 months ago       1.63 GB
+
+4、因为容器也需要用到22端口，所以把虚拟机的端口改为2022--->可以引用到安全方面
+[root@node1 docker]# vim /etc/ssh/sshd_config
+Port 2022
+[root@node1 docker]# systemctl restart sshd
+
+5、启动gitlab容器
+[root@node1 ~]# docker run -d -h gitlab --name gitlab
+> -p 443:443 -p 80:80 -p 22:22
+> --restart always
+> -v /srv/gitlab/config:/etc/gitlab  -v /srv/gitlab/logs:/var/log/gitlab  -v /srv/gitlab/data:/var/opt/gitlab
+> gitlab_zh:latest
+00aa661b8dd48b59952da81dadb9be02aa4943323e37f803dd4009d34b970d43
+
+[root@node1 ~]# docker ps   //确认运行
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                       PORTS                                                          NAMES
+00aa661b8dd4        gitlab_zh:latest    "/assets/wrapper"   About an hour ago   Up About an hour (healthy)   0.0.0.0:22->22/tcp, 0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp   gitlab
+
+6、访问http://192.168.1.1/。gitlab启动需要一段时间，开始的时候显示无法访问，
+过一段时间访问，出现内部错误，多等一会就可以了。
+# docker ps  看到状态是(healthy)时，就可以正常访问了
+！！！注意：该过程中，防火墙可能被默认生效，可清一下防火墙
+[root@node1 ~]# iptables -F
+[root@node1 ~]# iptables -t nat -F
+
+
+7、第一次访问需要设置密码，密码必须8位以上，要复杂一些。用户名为root
+
+8、gitlab服务器上的重要组成部分：
+（1）群组group：对应一个个团队
+（2）项目project：每个group都会编写多个软件项目，每个软件项目创建一个project
+（3）成员member：对应一个个的用户
+新建用户的时候不能设置密码。但是创建完成后，编辑用户可以为其设置密码。
+
+9、设置新建的用户是项目的主程序员
+
+10、上传软件项目到gitlab
+[root@node2 ~]# cd devops/
+[root@node2 devops]# git remote rename origin old-origin
+  出现以下错误，忽略即可
+error: 不能重命名配置小节 'remote.origin' 到 'remote.old-origin'
+[root@node2 devops]# git remote add origin http://192.168.4.1/devops/core_py.git
+[root@node2 devops]# git push -u origin --all
+[root@node2 devops]# git push -u origin --tags  //标签一起上传
+
+11、使用ssh免密的方式上传
+(1) 本地生成密钥对
+[root@node2 devops]# ssh-keygen -t rsa -C "zzg@tedu.cn" -b 4096
+！！！注意：在操作该步时，注意，检查/root/.ssh/目录下原是否存在公钥id_rsa.pub，如果存在，则做好备份，避免新建时被覆盖
+
+(2) 拷贝~/.ssh/id_rsa.pub，粘贴到gitlab用户的ssh密钥中
+
+(3) 将第10步中的http方式改为ssh
+[root@node2 devops]# git remote remove origin
+[root@node2 devops]# git remote add origin git@192.168.1.1:devops/core_py.git
+
+(4) 编写代码，上传
+[root@node2 devops]# echo "demo project" > README.md
+[root@node2 devops]# git add .
+[root@node2 devops]# git commit -m "add readme"
+[root@node2 devops]# git push
+
+12、如果在上传的时候，出现Permission Denied。解决办法：
+[root@node2 devops]# ssh-agent
+把ssh-agent输出的环境变量直接运行一下，然后执行下面命令
+[root@node2 devops]# ssh-add
+
+或者上传的时候，出现
+fatal: 当前分支 master 没有对应的上游分支。
+为推送当前分支并建立与远程上游的跟踪，使用
+
+    git push --set-upstream origin master
+可根据提示，执行以上命令解决。
+
+用户管理(续2)
+•  下载代码到本地
+[root@node2 devops]# git clone git@192.168.113.249:devops/core_py.git
+[root@node2 devops]# ls	-a core_py/
+. .. .git hello.py hi.py
+
+•  更新代码到本地
+[root@node2 devops]# git pull
+
+
+最常用的 git 命令有：
+   add        添加文件内容至索引
+   bisect     通过二分查找定位引入 bug 的变更
+   branch     列出、创建或删除分支
+   checkout   检出一个分支或路径到工作区
+   clone      克隆一个版本库到一个新目录
+   commit     记录变更到版本库
+   diff       显示提交之间、提交和工作区之间等的差异
+   fetch      从另外一个版本库下载对象和引用
+   grep       输出和模式匹配的行
+   init       创建一个空的 Git 版本库或重新初始化一个已存在的版本库
+   log        显示提交日志
+   merge      合并两个或更多开发历史
+   mv         移动或重命名一个文件、目录或符号链接
+   pull       获取并合并另外的版本库或一个本地分支
+   push       更新远程引用和相关的对象
+   rebase     本地提交转移至更新后的上游分支中
+   reset      重置当前HEAD到指定状态
+   rm         从工作区和索引中删除文件
+   show       显示各种类型的对象
+   status     显示工作区状态
+   tag        创建、列出、删除或校验一个GPG签名的 tag 对象
+
+
+
+
+
+
+
