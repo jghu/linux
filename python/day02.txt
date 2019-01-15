@@ -1,0 +1,486 @@
+数据类型
+1、数字
+（1）简单理解为整数和小数即可(int:有符号整数;float:浮点数;complex:复数)
+（2）布尔可以理解为是特殊的整数，使用True和False表示，值为1和0
+（3）python表示整数的时候，如果没有前缀表示10进制数，2进制0b开头，8进制数0o开头,16进制0x开头
+
+
+!!!注意:python默认以十进制数显示，修改文件权限，导入os模块，使用八进制赋予
+
+
+[root@room8pc16 day01]# cp /etc/hosts /tmp/
+[root@room8pc16 day01]# ll /tmp/hosts           #了解原权限信息,方便比较
+-rw-r--r--. 1 root root 477 3月  19 2018 /etc/hosts
+
+>>> import os                                        #加载与权限相关的软件
+>>> os.chmod('/tmp/hosts', 400)             #调用模块中chmod修改权限为属主只读
+[root@room8pc16 day01]# ll /tmp/hosts   #没有添加前缀,表示10进制,没有达到修改的目的
+-rw--w----. 1 root root 9806 1月  12 09:40 /tmp/hosts
+>>> os.chmod('/tmp/hosts', 0o400)          # 正确方法,使用八进制
+[root@room8pc16 day01]# ll /tmp/hosts
+-r--------. 1 root root 9806 1月  12 09:40 /tmp/hosts
+
+各进制的转换:乘自身进制相加
+>>> 11   //十进制  11
+11
+>>> 0b11  //二进制  2^1 + 2^0 = 3
+3
+>>> 0o11   //八进制  8*1 + 8*1 = 9
+9
+>>> 0x11   //16进制  16*1 + 16*1 = 17
+17
+
+2、字符串
+(1) 在python中，字符串被定义为引号之间的字符集合,支持使用成对的单双引号;单双引号没有任何区别,表示的意义相同
+
+(2) 字符串中如果有未确定的数据，可以使用占位符
+>>> '%s is a digit' % 100   #占位符  %s
+'100 is a digit'
+>>> '%s is %s years old' % ('bob', 20)   #支持多个占位符的使用,按照顺序对应
+'bob is 20 years old'
+
+(3) 三引号，三个连续单引号或双引号，它可以保留输入格式
+>>> words = 'hello\nnihao'    #使用\n分行
+>>> print(words)
+hello
+nihao
+>>> dicts = '''hello           #使用三引号保留格式,实际就是自动引用\n分行的原理
+... nihao
+... welcome'''
+>>> print(dicts)
+hello
+nihao
+welcome
+>>> dicts
+
+(4) 字符串常用方法
+字符串切片
+•  使用索引运算符[ ]和切片运算符[ : ]可得到子字符串
+•  第一个字符的索引是0,最后一个字符的索引是-1
+•  子字符串包含切片中的起始下标,但不包含结束下标
+
+>>> py_str = 'python'   #定义变量
+>>> len(py_str)          #统计变量中字符串的长度
+6
+>>> 't' in py_str   # True   #判断"t"在变量中是否真的包含在变量的内容中,包含则为真
+>>> 'th' in py_str   # True
+>>> 'to' in py_str   # False
+>>> 'to' not in py_str   # True  #可通过反义定义输出结果
+>>> py_str[0]      #切片显示变量中第一位下标
+'p'
+>>> 'python'[0]    #显示常量中第一位下标
+>>> py_str[5]       #切片显示变量中第位下标
+'n'
+>>> py_str[6]    # IndexError  #切片显示的位数不能等于或超过字符串的长度,提示超出范围
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+IndexError: string index out of range
+
+>>> py_str[-1]    #显示最后一个字符串切片
+>>> py_str[-2]
+'o'
+>>> py_str[2:4]   # !!!注意:起始下标包含，结束下标不包含
+'th'
+>>> py_str[2:]    # 结束不写，表示到结尾
+'thon'
+>>> py_str[:2]
+'py'
+>>> py_str[:]    #全部输出
+'python'
+>>> py_str[::2]   # 默认第0位开始2表示步长值
+'pto'
+>>> py_str[1::2]   #从定义的第1位开始
+'yhn'
+>>> py_str[::-1]    # 步长值为负，表示自右向左取
+'nohtyp'
+
+(5) 拼接和重复
+•  使用+号可以将多个字符串拼接在一起
+•  使用*号可以将一个字符串重复多次
+>>> py_str + ' ' + 'good'  #!!注意:空格
+'python good'
+>>> '*' * 30    #第一个*用单引号表示字符串,第二个表示定义字符串使用多少次
+>>> '#*#' * 20
+
+3、列表：把各种数据集中存储到一个容器中
+•  可以将列表当成普通的“数组”,它能保存任意数量任意类型的python对象
+•  像字符串一样,列表也支持下标和切片操作
+•  列表中的项目可以改变
+>>> alist = [10, 20, 'bob', 'alice', [1, 2]]
+>>> len(alist)
+5
+>>> alist[-1]
+[1, 2]
+>>> alist[4]
+[1, 2]
+
+---->使用in或not in判断成员关系
+>>> 10 in alist  #判断10是否包含在集合中,!!!注意,该集合中的成员都是一个整体
+True
+>>> 1 in alist
+False
+>>> [1, 2] in alist
+True
+>>> alist * 3
+[10, 20, 'bob', 'alice', [1, 2], 10, 20, 'bob', 'alice', [1, 2], 10, 20, 'bob', 'alice', [1, 2]]
+>>> alist[-1] = 100   //修改数组中最后一位的值
+>>> alist
+[10, 20, 'bob', 'alice', 100]
+>>> alist.append(200)    #使用append方法向列表中追加元素
+>>> alist
+[10, 20, 'bob', 'alice', 100, 200]
+
+4、元组，相当于是不可变的列表
+>>> atuple = (10, 20, 'bob', 'alice', 100, 200)
+>>> atuple[2:4]
+('bob', 'alice')
+>>> atuple[-1]
+200
+>>> atuple[-1] = 300   # 报错，因为不可变--->元组一旦定义,不能改变
+
+5、字典，由键-值(key-value)对构成的映射数据类型，key不能重复，value可以相同，无序
+•  通过键取值,不支持下标操作
+>>> adict = {'name': 'bob', 'age': 20}
+>>> len(adict)              #以key:value作为一个整体.且通过Key查value
+>>> 20 in adict             # False
+>>> 'age' in adict         # True
+>>> adict['name']         # 'bob'
+
+数据类型分类： 重要，背下来
+按存储模型分类：
+    标量类型:数值、字符串
+    容器类型:列表、元组、字典
+按更新模型分类:
+    可变类型:列表、字典
+    不可变类型:数字、字符串、元组
+按访问模型分类
+    直接访问:数字
+    顺序访问:字符串、列表、元组
+    映射访问:字典
+
+
+判断语句
+
+1、前面讲的数据类型可以当作判断条件
+(1) 任何值为0的数字都是False，非0是True
+(2) 任何非空对象都是True，空对象是False
+
+py_str = "python"   //赋值变量
+if "th" in py_str:   //判断th是否在变量py_str中包含
+    print("yes")     //存在则输出yes
+if "to" in py_str:
+    print("'to' in str")
+else:
+    print("'to' is not in str")
+
+if -0.0:   #False，只要表达式数字为非零值即为True：-0.0为0,其中"0.0为一个整体:0.0=0"
+    print('0 not ok')
+if ' ':    #True
+    print('str is ok')
+if '':  # False
+    print('str is ok')
+if []:  # False
+    print("list is not ok")
+
+
+要求:判断合法用户
+# print("请输入用户名和密码:" )
+# username = input("user")
+# password = input("password")
+# if username == "bob" and password == "123456":
+#     print("Login successful")
+# else:
+#     print("Login inorrect")
+
+#要求用户写的登陆密码为非明文,导入模块getpass
+import getpass
+print("请输入用户名和密码:" )
+username = input("user:")
+password = getpass.getpass("password:")   #getpass.getpass --> 引用"模块名:模块中的功能名称"
+if username == "bob" and password == "123456":
+    print("Login successful")
+else:
+    print("Login inorrect")
+
+# !!!注意:不能直接在pycharm中运行,会报错,需要复制路径到IDE中执行
+
+
+if语句语法结构
+•  标准if条件语句的语法
+if	expression:
+    if_suite
+else:
+    else_suite
+•  如果表达式的值非0或者为布尔值True, 则代码组if_suite被执行;否则就去执行else_suite
+•  代码组是一个python术语,它由一条或多条语句组成,表示一个子代码块
+
+•  扩展if语句结构
+if	expression1:
+				if_suite
+elif	expression2:
+				elif_suite
+else:
+				else_suite
+
+
+import random    #加载随机生成数模块
+number = random.randint(1,10)   #调用random模块的randint
+print(number)
+
+answer = int(input("number:"))  #用户随机输入一个1到10的整数
+if answer > number:
+    print("猜大了")
+elif answer < number:
+    print("猜小了")
+else:
+    print("猜对了")
+
+
+###########################
+条件表达式
+集成的语法确定为: X if C else Y
+
+以下两种不同格式,一样效果的
+
+a,b = 10,20
+if a >= b:
+    s = a
+else:
+    s = b
+print(s)
+***************************
+x,y = 30,40
+small = x if x <= y else  y
+print(small)
+###########################
+
+编写判断成绩的程序
+number= int(input("请输入成绩:"))
+if number >= 90:     //由大到小,执行先后,判断唯一性
+    print("优秀")
+elif number >= 80:
+    print("好")
+elif number >= 70:
+    print("良好")
+elif number >= 60:
+    print("及格")
+else:
+    print("你要努力了")
+
+或者区间对比写法:
+if 60 <= number < 70:    //python支持区间对比法,大于60且小于70
+    print("ok")
+elif 70 <= number < 80:
+    print("good")
+elif 80 <= number < 90:
+    print("very good")
+elif 90 <= number < 100:
+    print("prefect")
+else:
+    print("come on boy")
+
+
+编写石头剪刀布小游戏
+1.易读版
+import random
+pc = int(random.randint(1,3))
+print('"1:剪刀","2:拳头","3:布" 你猜:')
+user = int(input("num:"))
+
+print("user: %s,pc: %s" % (user,pc))  #显示玩家与电脑各自出拳情况
+if user == 1:
+    if pc == 1:
+        print("\033[31;1m平局\033[0m")  #显示不同颜色
+    elif pc == 2:
+        print("\033[32;我赢了\033[0m")
+    else:
+        print("\033[32;你赢了\033[0m")
+if user == 2:
+    if pc == 2:
+        print("\033[31;1m平局\033[0m")
+    elif pc == 1:
+        print("\033[32;你赢了\033[0m")
+    else:
+        print("\033[32;我赢了\033[0m")
+if user == 3:
+    if pc == 3:
+        print("\033[31;1m平局\033[0m")
+    elif pc == 2:
+        print("\033[32;你赢了\033[0m")
+    else:
+        print("\033[32;我赢了\033[0m")
+
+
+import random
+computer = random.choice(['石头', '剪刀', '布'])   //变量模式
+player = input('请出拳(石头/剪刀/布): ')
+
+print('你出拳: %s， 计算机出拳: %s' % (player, computer))
+if player == '石头':
+    if computer == '石头':
+        print('\033[32;1m平局\033[0m')
+    elif computer == '剪刀':
+        print('\033[31;1mYou WIN!!!\033[0m')
+    else:
+        print('\033[31;1mYou LOSE!!!\033[0m')
+elif player == '剪刀':
+    if computer == '石头':
+        print('\033[31;1mYou LOSE!!!\033[0m')
+    elif computer == '剪刀':
+        print('\033[32;1m平局\033[0m')
+    else:
+        print('\033[31;1mYou WIN!!!\033[0m')
+else:
+    if computer == '石头':
+        print('\033[31;1mYou WIN!!!\033[0m')
+    elif computer == '剪刀':
+        print('\033[31;1mYou LOSE!!!\033[0m')
+    else:
+        print('\033[32;1m平局\033[0m')
+
+2.精简版
+import random
+list = ["剪刀","石头","布"]
+win_list = [["剪刀","石头"],["石头","布"],["布","剪刀"]]
+pc_choic = random.choice(list)
+userplays = print(input("userplays:"))
+if userplays == pc_choic:
+    print("平局")
+elif [userplays,pc_choic] in win_list:
+    print("你赢了")
+else:
+    print("我赢了")
+
+进化版:
+import random
+all_choice = ['石头', '剪刀', '布']
+win_list = [['石头', '剪刀'], ['剪刀', '布'], ['布', '石头']]          # 人赢的情况
+prompt = """(0) 石头
+(1) 剪刀
+(2) 布
+Please input your choice(0/1/2): """   # 屏幕提示先定义成变量
+
+computer = random.choice(all_choice)
+ind = int(input(prompt))                  # 用户输入列表的下标
+player = all_choice[ind]                  # 通过下标取出对应的元素
+
+print('你出拳: %s， 计算机出拳: %s' % (player, computer))
+if player == computer:
+    print('\033[32;1m平局\033[0m')
+elif [player, computer] in win_list:     # 人机选择的小列表是大列表的一项
+    print('\033[31;1mYou WIN!!!\033[0m')
+else:
+    print('\033[31;1mYou LOSE!!!\033[0m')
+
+
+
+
+
+while循环
+循环概述
+•  一组被重复执行的语句称之为循环体,能否继续重复,决定循环的终止条件
+•  Python中的循环有while循环和for循环
+•  循环次数未知的情况下,建议采用while循环
+•  循环次数可以预知的情况下,建议采用for循环
+
+while循环语法结构
+•  当需要语句不断的重复执行时,可以使用while循环
+while	expression:
+    while_suite
+
+
+语句while_suite会被连续不断的循环执行,直到表达式的值变成0或False
+
+result = 0    #用于保留计算结果
+clouter = 1  #计数器,用于不断累加1到result中
+
+while clouter <= 100:  #或者 while clouter < 101: 初始值为1
+    result += clouter  #循环加上clouter值
+    clouter += 1       #循环加上1
+
+print(result)          #输出执行结果;或者更完美的写法:print ("result is %d" % sum100)
+
+
+break语句
+•  break语句可以结束当前循环然后跳转到下条语句
+•  写程序的时候,应尽量避免重复的代码,在这种情况下可以使用while-break结构
+
+import random    #加载随机生成数模块
+number = random.randint(1,10)   #调用random模块的randint
+running = True  //赋值变量,当执行成功时的输出
+
+while running:  #当满足条件时,不执行;或者不赋值上面的操作,直接用while 1:表示为真
+    answer = int(input("number:"))
+    if answer > number:
+        print("猜大了")
+    elif answer < number:
+        print("猜小了")
+    else:
+        print("猜对了")
+        running = False   #或者使用break,中断循环
+
+
+continue语句
+•  当遇到continue语句时,程序会终止当前循环,并忽略剩余的语句,然后回到循环的顶端
+•  如果仍然满足循环条件,循环体内语句继续执行,否则退出循环
+
+1.不严谨版
+#要求,统计1-100内所有奇数相加
+result = 0
+couter = 0
+while couter < 100:
+    couter += 1
+    if couter % 2 == 1:
+        continue
+    else:
+        result += couter
+print(result)
+
+2.严谨版
+result = 0
+counter = 0
+
+while counter < 100:
+    counter += 1
+    # if counter % 2 == 1:
+    if counter % 2:   # 余数为1或0，1为真0为假
+        continue
+    # else:
+    result += counter
+
+print(result)
+
+else语句
+•  python中的while语句也支持else子句
+•  else子句只在循环完成后执行
+•  break语句也会跳过else块
+
+
+•  编写guess.py,要求如下:
+1.  系统随机生成3以内的数字
+2.  要求用户猜生成的数字是多少
+3.  最多猜3次,猜对结束程序
+4.  如果3次全部猜错,则输出正确结果
+import random
+number = random.randint(1,3)  #系统随机生成3以内的数字
+couter = 0   #计数器
+
+while couter < 3:
+    answer = int(input("num:"))
+    if answer < number:
+        print("猜小了")
+    elif answer > number:
+        print("猜大了")
+    else:
+        print("猜对了")
+        break     #猜对中断
+    couter += 1   #猜错计数加1
+else:             # 循环正常结束时执行，如果被break也就不执行了
+    print(number)  #输出正确结果
+
+
+
+
+
+
+
