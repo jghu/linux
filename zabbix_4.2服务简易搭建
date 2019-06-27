@@ -1,0 +1,70 @@
+1、安装传输工具lrzsz
+[root@zabbix mysql]# yum -y install lrzsz    
+
+2、安装yum源自定义工具createrepo
+[root@zabbix php]# yum -y install createrepo
+
+3、安装mysql
+#mysql数据库RPM包路径,准备mysql RPM包
+[root@zabbix ~]# mkdir mysql             
+[root@zabbix ~]# cd mysql/
+[root@zabbix mysql]# ls
+[root@zabbix mysql]# rz      
+rz waiting to receive.
+Starting zmodem transfer.  Press Ctrl+C to cancel.
+Transferring mysql-community-client-5.7.17-1.el7.x86_64.rpm...
+  100%   24450 KB    24450 KB/sec    00:00:01       0 Errors  
+Transferring mysql-community-common-5.7.17-1.el7.x86_64.rpm...
+  100%     271 KB     271 KB/sec    00:00:01       0 Errors  
+Transferring mysql-community-devel-5.7.17-1.el7.x86_64.rpm...
+  100%    3685 KB    3685 KB/sec    00:00:01       0 Errors  
+Transferring mysql-community-embedded-5.7.17-1.el7.x86_64.rpm...
+  100%   44408 KB    22204 KB/sec    00:00:02       0 Errors  
+Transferring mysql-community-embedded-compat-5.7.17-1.el7.x86_64.rpm...
+  100%   23364 KB    23364 KB/sec    00:00:01       0 Errors  
+Transferring mysql-community-embedded-devel-5.7.17-1.el7.x86_64.rpm...
+  100%  123093 KB    15386 KB/sec    00:00:08       0 Errors  
+Transferring mysql-community-libs-5.7.17-1.el7.x86_64.rpm...
+  100%    2184 KB    2184 KB/sec    00:00:01       0 Errors  
+Transferring mysql-community-libs-compat-5.7.17-1.el7.x86_64.rpm...
+  100%    2063 KB    2063 KB/sec    00:00:01       0 Errors  
+Transferring mysql-community-minimal-debuginfo-5.7.17-1.el7.x86_64.rpm...
+  100%   53292 KB    10658 KB/sec    00:00:05       0 Errors  
+Transferring mysql-community-server-5.7.17-1.el7.x86_64.rpm...
+  100%  165524 KB    13793 KB/sec    00:00:12       0 Errors  
+Transferring mysql-community-test-5.7.17-1.el7.x86_64.rpm...
+  100%  113947 KB    11394 KB/sec    00:00:10       0 Errors  
+
+#自定义mysql yum 源
+[root@zabbix ~]# createrepo mysql/
+Spawning worker 0 with 11 pkgs
+Workers Finished
+Saving Primary metadata
+Saving file lists metadata
+Saving other metadata
+Generating sqlite DBs
+Sqlite DBs complete
+
+[root@zabbix ~]# cat <<EOF >> /etc/yum.repos.d/zdy.repo
+[mysql]
+name=mysql
+enabled=1
+gpgcheck=0
+baseurl=file:///root/mysql
+EOF
+
+[root@zabbix ~]# yum clean all
+已加载插件：fastestmirror
+正在清理软件源： centos7.6 mysql php zabbix
+Cleaning up list of fastest mirrors
+Other repos take up 96 M of disk space (use --verbose for details)
+[root@zabbix ~]# yum repolist
+
+#安装mysql数据库
+[root@zabbix mysql]# yum -y install mysql-community-*         
+
+
+#启动mysql数据库服务，验证3306端口
+[root@zabbix mysql]# systemctl restart mysqld
+[root@zabbix php]# ss -antp | grep :3306
+LISTEN     0      80          :::3306                    :::*      
