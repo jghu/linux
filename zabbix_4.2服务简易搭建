@@ -83,4 +83,259 @@ LISTEN     0      128    127.0.0.1:9000                     *:*                 
 [root@zabbix zabbix]# ss -antp | grep :80
 LISTEN     0      128         :::80                      :::*                   users:(("httpd",pid=8835,fd=4),("httpd",pid=8464,fd=4),("httpd",pid=8459,fd=4),("httpd",pid=8259,fd=4),("httpd",pid=8258,fd=4),("httpd",pid=8257,fd=4),("httpd",pid=8256,fd=4),("httpd",pid=8255,fd=4),("httpd",pid=8254,fd=4))
 
+10、检测http服务
+#编写测试默认静态网页
+[root@zabbix ~]# echo test > /var/www/html/index.html
+[root@zabbix ~]# curl -I http://127.0.0.1
+HTTP/1.1 200 OK
+Date: Fri, 28 Jun 2019 06:13:55 GMT
+Server: Apache/2.4.6 (CentOS) PHP/5.4.16
+Last-Modified: Fri, 28 Jun 2019 06:13:51 GMT
+ETag: "5-58c5c2eb1ba97"
+Accept-Ranges: bytes
+Content-Length: 5
+Content-Type: text/html; charset=UTF-8
+#返回码200，测试正常
+
+#编写测试默认测试php网页
+[root@zabbix ~]# cat <<EOF > /var/www/html/test.php
+> <?php
+> phpinfo();
+> ?>
+> EOF
+[root@zabbix ~]# curl -I http://127.0.0.1/test.php
+HTTP/1.1 200 OK
+Date: Fri, 28 Jun 2019 06:18:24 GMT
+Server: Apache/2.4.6 (CentOS) PHP/5.4.16
+X-Powered-By: PHP/5.4.16
+Content-Type: text/html; charset=UTF-8
+#返回码200，测试正常；同时，说明http与php的版本是状态是符合的
+
+11、登录数据库，创建zabbix数据，授权zabbix用户权限
+[root@zabbix mysql]# mysql -uroot -p'Qwer.1234'
+mysql> create database zabbix character set utf8 collate utf8_bin;
+mysql> grant all privileges on zabbix.* to zabbix@localhost identified by 'xxxx';
+mysql> flush privileges;
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| sys                |
+| zabbix             |
++--------------------+
+5 rows in set (0.00 sec)
+
+12、将zabbix安装自带的zabbix的数据导入到zabbix数据库中
+[root@zabbix zabbix]# zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -uzabbix -p zabbix 
+
+13、登录数据库，查看验证是否导入成功
+[root@zabbix zabbix]# mysql -uroot -p
+mysql> use zabbix;
+mysql> show tables;    #确认是否存在表格了
+mysql> quit
+
+
+！！！注意！！！
+zabbix配置文件中指定网页目录不在/var/www/html,而是/usr/share/zabbix/下，具体路径具体查找
+[root@zabbix ~]# find / -name zabbix.php
+/usr/share/zabbix/zabbix.php
+
+
+14、修改php配置文件
+[root@zabbix zabbix]# vim /etc/php.ini 
+max_execution_time = 300
+max_input_time = 300
+memory_limit = 128M
+always_populate_raw_post_data = -1
+date.timezone = Asia/Shanghai
+post_max_size = 16M
+
+#重启php，配置文件生效
+[root@zabbix zabbix]# systemctl restart rh-php72-php-fpm
+
+15、配置zabbix-server服务
+[root@zabbix zabbix]# vim /etc/zabbix/zabbix_server.conf 
+LogFile=/tmp/zabbix_server.log
+DBHost=localhost
+DBName=zabbix
+DBUser=zabbix
+DBPassword=Qwer.1234
+ListenIP=0.0.0.0
+Timeout=4
+AlertScriptsPath=${datadir}/zabbix/alertscripts
+LogSlowQueries=3000
+
+#启动zabbix-server服务                                                                                             
+[root@zabbix zabbix]# systemctl restart zabbix-server
+[root@zabbix zabbix]# ss -antp | grep zabbix         
+[root@zabbix zabbix]# ss -antp | grep 10051
+[root@zabbix zabbix]# ss -antp | grep 10050
+
+！！！注意！！！
+该处zabbix启动可能存在启动服务了，但自动回滚关闭，导致启动失败的情况
+可能原因：
+1、zabbix-server配置文件配置的密码连接错误，导致连接不到数据库；
+2、防火墙iptables在启动服务时，启动了规则
+3、selinux开启，并设置为了强制模式
+
+解决方式：
+根据日志提示的情况，分别调整以上可能事件的配置
+
+[root@zabbix zabbix]# getenforce 
+Enforcing
+[root@zabbix zabbix]# setenforce 0
+[root@zabbix zabbix]# sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+[root@zabbix zabbix]# iptables -nL
+[root@zabbix zabbix]# iptables -F
+
+#再次重启zabbix-server就正常了                                                                                                            
+[root@zabbix zabbix]# systemctl restart zabbix-server                         
+[root@zabbix zabbix]# ss -atnp |  grep zabbix
+LISTEN     0      128          *:10051                    *:*                   users:(("zabbix_server",pid=21493,fd=4),("zabbix_server",pid=21492,fd=4),("zabbix_server",pid=21491,fd=4),("zabbix_server",pid=21490,fd=4),("zabbix_server",pid=21489,fd=4),("zabbix_server",pid=21483,fd=4),("zabbix_server",pid=21482,fd=4),("zabbix_server",pid=21481,fd=4),("zabbix_server",pid=21480,fd=4),("zabbix_server",pid=21479,fd=4),("zabbix_server",pid=21478,fd=4),("zabbix_server",pid=21477,fd=4),("zabbix_server",pid=21476,fd=4),("zabbix_server",pid=21475,fd=4),("zabbix_server",pid=21474,fd=4),("zabbix_server",pid=21473,fd=4),("zabbix_server",pid=21472,fd=4),("zabbi_server",pid=21471,fd=4),("zabbix_server",pid=21470,fd=4),("zabbix_server",pid=21469,fd=4),("zabbix_server",pid=21468,fd=4),("zabbix_server",pid=21467,fd=4),("zabbix_server",pid=21466,fd=4),("zabbix_server",pid=21465,fd=4),("zabbix_server",pid=21464,fd=4),("zabbix_server",pid=21463,fd=4),("zabbix_server",pid=21462,fd=4),("zabbix_server",pid=21461,fd=4),("zabbix_server",pid=21460,fd=4),("zabbix_server",pid=21459,fd=4),("zabbix_server",pid=21458,fd=4),("zabbix_server",pid=21457,fd=4),("zabbix_server",pid=21456,fd=4),("zabbix_server",pid=21455,fd=4),("zabbix_server",pid=21454,fd=4),("zabbix_server",pid=21453,fd=4),("zabbix_server",pid=21452,fd=4))
+
+
+<--日志报错信息案例：在本文结尾显示-->
+
+16、配置zabbix-agentd服务
+[root@zabbix zabbix]# vim /etc/zabbix/zabbix_agentd.conf 
+Server=127.0.0.1,139.9.59.108
+ServerActive=127.0.0.1,139.9.59.108
+Hostname=zabbix_server
+LogFile=/tmp/zabbix_server.log
+UnsafeUserParameters=1
+
+#启动zabbix-agent服务                                                                                             
+[root@zabbix zabbix]# systemctl restart zabbix-agent
+[root@zabbix zabbix]# ss -antp | grep zabbix
+LISTEN     0      128          *:10050                    *:*                   users:(("zabbix_agentd",pid=21632,fd=4),("zabbix_agentd",pid=21631,fd=4),("zabbix_agentd",pid=21630,fd=4),("zabbix_agentd",pid=21629,fd=4),("zabbix_agentd",pid=21628,fd=4),("zabbix_agentd",pid=21627,fd=4),("zabbix_agentd",pid=21626,fd=4))
+LISTEN     0      128          *:10051                    *:*                   users:(("zabbix_server",pid=21493,fd=4),("zabbix_server",pid=21492,fd=4),("zabbix_server",pid=21491,fd=4),("zabbix_server",pid=21490,fd=4),("zabbix_server",pid=21489,fd=4),("zabbix_server",pid=21483,fd=4),("zabbix_server",pid=21482,fd=4),("zabbix_server",pid=21481,fd=4),("zabbix_server",pid=21480,fd=4),("zabbix_server",pid=21479,fd=4),("zabbix_server",pid=21478,fd=4),("zabbix_server",pid=21477,fd=4),("zabbix_server",pid=21476,fd=4),("zabbix_server",pid=21475,fd=4),("zabbix_server",pid=21474,fd=4),("zabbix_server",pid=21473,fd=4),("zabbix_server",pid=21472,fd=4),("zabbi_server",pid=21471,fd=4),("zabbix_server",pid=21470,fd=4),("zabbix_server",pid=21469,fd=4),("zabbix_server",pid=21468,fd=4),("zabbix_server",pid=21467,fd=4),("zabbix_server",pid=21466,fd=4),("zabbix_server",pid=21465,fd=4),("zabbix_server",pid=21464,fd=4),("zabbix_server",pid=21463,fd=4),("zabbix_server",pid=21462,fd=4),("zabbix_server",pid=21461,fd=4),("zabbix_server",pid=21460,fd=4),("zabbix_server",pid=21459,fd=4),("zabbix_server",pid=21458,fd=4),("zabbix_server",pid=21457,fd=4),("zabbix_server",pid=21456,fd=4),("zabbix_server",pid=21455,fd=4),("zabbix_server",pid=21454,fd=4),("zabbix_server",pid=21453,fd=4),("zabbix_server",pid=21452,fd=4))
+LISTEN     0      128         :::10050                   :::*                   users:(("zabbix_agentd",pid=21632,fd=5),("zabbix_agentd",pid=21631,fd=5),("zabbix_agentd",pid=21630,fd=5),("zabbix_agentd",pid=21629,fd=5),("zabbix_agentd",pid=21628,fd=5),("zabbix_agentd",pid=21627,fd=5),("zabbix_agentd",pid=21626,fd=5))
+
+17、登录zabbix web界面初始化zabbix服务
+http://192.168.91.131/zabbix
+
+<--具体配置方式参考官方配置文档：https://www.zabbix.com/documentation/4.2/manual/appendix/install/db_scripts-->
+
+
+<--以下部分为zabbix-server服务启动过程中，zabbix数据库密码配置错误和selinux设置了强制模式，导致启动失败的日志记录-->
+<--注意防火墙在每次启动zabbix-sever服务时，可能存在自动启动了规则，需要设置或者清理一下，才能正常访问zabbix页面-->
+
+具体原原因查看日志：
+
+1、zabbix配置文件配置到数据库的密码错误，修改正确的密码：
+[root@zabbix zabbix]# less /var/log/zabbix/zabbix_server.log 
+ 20233:20190626:170252.014 Starting Zabbix Server. Zabbix 4.2.3 (revision 3685611ba5).
+ 20233:20190626:170252.014 ****** Enabled features ******
+ 20233:20190626:170252.014 SNMP monitoring:           YES
+ 20233:20190626:170252.014 IPMI monitoring:           YES
+ 20233:20190626:170252.014 Web monitoring:            YES
+ 20233:20190626:170252.014 VMware monitoring:         YES
+ 20233:20190626:170252.014 SMTP authentication:       YES
+ 20233:20190626:170252.014 Jabber notifications:       NO
+ 20233:20190626:170252.014 Ez Texting notifications:  YES
+ 20233:20190626:170252.014 ODBC:                      YES
+ 20233:20190626:170252.014 SSH2 support:              YES
+ 20233:20190626:170252.014 IPv6 support:              YES
+ 20233:20190626:170252.014 TLS support:               YES
+ 20233:20190626:170252.014 ******************************
+ 20233:20190626:170252.014 using configuration file: /etc/zabbix/zabbix_server.conf
+ 20233:20190626:170252.172 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20233:20190626:170252.172 database is down: reconnecting in 10 seconds
+ 20233:20190626:170302.175 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20233:20190626:170302.175 database is down: reconnecting in 10 seconds
+ 20233:20190626:170312.178 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20233:20190626:170312.178 database is down: reconnecting in 10 seconds
+ 20233:20190626:170322.179 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20233:20190626:170322.179 database is down: reconnecting in 10 seconds
+ 20233:20190626:170325.788 Got signal [signal:15(SIGTERM),sender_pid:20269,sender_uid:0,reason:0]. Exiting ...
+ 20233:20190626:170325.794 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20233:20190626:170325.794 Cannot connect to the database. Exiting...
+ 20273:20190626:170325.820 Starting Zabbix Server. Zabbix 4.2.3 (revision 3685611ba5).
+ 20273:20190626:170325.821 ****** Enabled features ******
+ 20273:20190626:170325.821 SNMP monitoring:           YES
+ 20273:20190626:170325.821 IPMI monitoring:           YES
+ 20273:20190626:170325.821 Web monitoring:            YES
+ 20273:20190626:170325.821 VMware monitoring:         YES
+ 20273:20190626:170325.821 SMTP authentication:       YES
+ 20273:20190626:170325.821 Jabber notifications:       NO
+ 20273:20190626:170325.821 Ez Texting notifications:  YES
+ 20273:20190626:170325.821 ODBC:                      YES
+ 20273:20190626:170325.821 SSH2 support:              YES
+ 20273:20190626:170325.821 IPv6 support:              YES
+ 20273:20190626:170325.821 TLS support:               YES
+ 20273:20190626:170325.821 ******************************
+ 20273:20190626:170325.821 using configuration file: /etc/zabbix/zabbix_server.conf
+ 20273:20190626:170325.831 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170325.831 database is down: reconnecting in 10 seconds
+ 20273:20190626:170335.833 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170335.835 database is down: reconnecting in 10 seconds
+ 20273:20190626:170345.837 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170345.837 database is down: reconnecting in 10 seconds
+ 20273:20190626:170355.839 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170355.839 database is down: reconnecting in 10 seconds
+ 20273:20190626:170405.841 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170405.841 database is down: reconnecting in 10 seconds
+ 20273:20190626:170415.842 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170415.843 database is down: reconnecting in 10 seconds
+ 20273:20190626:170425.845 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170425.845 database is down: reconnecting in 10 seconds
+ 20273:20190626:170435.847 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170435.847 database is down: reconnecting in 10 seconds
+zabbix-server [20341]: Is this process already running? Could not lock PID file [/var/run/zabbix/zabbix_server.pid]: [11] Resource temporarily unavailable
+ 20273:20190626:170445.848 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170445.849 database is down: reconnecting in 10 seconds
+ 20273:20190626:170455.851 [Z3001] connection to database 'zabbix' failed: [1045] Access denied for user 'zabbix'@'localhost' (using password: YES)
+ 20273:20190626:170455.851 database is down: reconnecting in 10 seconds
+ 
+ 
+2、防火墙iptables和selinux开启了，解决修改selinux为disabled和清理iptables
+
+注意日志重要的一段：
+cannot start alert manager service: Cannot bind socket to "/var/run/zabbix/zabbix_server_alerter.sock": [13] Permission denied.
+
+[root@zabbix zabbix]# tail -40 /var/log/zabbix/zabbix_server.log 
+ 20545:20190626:170721.427 ******************************
+ 20545:20190626:170721.427 using configuration file: /etc/zabbix/zabbix_server.conf
+ 20545:20190626:170721.436 current database version (mandatory/optional): 04020000/04020000
+ 20545:20190626:170721.436 required mandatory version: 04020000
+ 20545:20190626:170721.459 server #0 started [main process]
+ 20571:20190626:170721.474 server #26 started [alert manager #1]
+ 20571:20190626:170721.474 cannot start alert manager service: Cannot bind socket to "/var/run/zabbix/zabbix_server_alerter.sock": [13] Permission denied.
+ 20557:20190626:170721.476 server #12 started [self-monitoring #1]
+ 20559:20190626:170721.476 server #14 started [poller #1]
+ 20560:20190626:170721.487 server #15 started [poller #2]
+ 20563:20190626:170721.498 server #18 started [poller #5]
+ 20566:20190626:170721.509 server #21 started [trapper #2]
+ 20567:20190626:170721.512 server #22 started [trapper #3]
+ 20558:20190626:170721.514 server #13 started [task manager #1]
+ 20554:20190626:170721.515 server #9 started [history syncer #4]
+ 20565:20190626:170721.515 server #20 started [trapper #1]
+ 20549:20190626:170721.518 server #4 started [http poller #1]
+ 20550:20190626:170721.518 server #5 started [discoverer #1]
+ 20568:20190626:170721.528 server #23 started [trapper #4]
+ 20546:20190626:170721.531 server #1 started [configuration syncer #1]
+ 20547:20190626:170721.531 server #2 started [housekeeper #1]
+ 20551:20190626:170721.532 server #6 started [history syncer #1]
+ 20552:20190626:170721.532 server #7 started [history syncer #2]
+ 20553:20190626:170721.533 server #8 started [history syncer #3]
+ 20556:20190626:170721.533 server #11 started [proxy poller #1]
+ 20561:20190626:170721.535 server #16 started [poller #3]
+ 20564:20190626:170721.547 server #19 started [unreachable poller #1]
+ 20569:20190626:170721.558 server #24 started [trapper #5]
+ 20570:20190626:170721.561 server #25 started [icmp pinger #1]
+ 20572:20190626:170721.562 server #27 started [alerter #1]
+ 20548:20190626:170721.562 server #3 started [timer #1]
+ 20555:20190626:170721.562 server #10 started [escalator #1]
+ 20562:20190626:170721.565 server #17 started [poller #4]
+ 20545:20190626:170721.578 One child process died (PID:20571,exitcode/signal:1). Exiting ...
+zabbix_server [20545]: Error waiting for process with PID 20571: [10] No child processes
+ 20545:20190626:170721.669 syncing history data...
+ 20545:20190626:170721.669 syncing history data done
+ 20545:20190626:170721.669 syncing trend data...
+ 20545:20190626:170721.669 syncing trend data done
+ 20545:20190626:170721.669 Zabbix Server stopped. Zabbix 4.2.3 (revision 3685611ba5).
+
 
