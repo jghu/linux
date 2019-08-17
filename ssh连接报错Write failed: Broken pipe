@@ -1,0 +1,44 @@
+问题描述
+使用root连接服务器正常，切换普通用户连接报错
+具体报错如下：Write failed: Broken pipe
+或者：failed to execute /bin/bash: Resource temporarily unavailable
+使用root切换普通用户也报错
+[root@tymhgj1 ~]# su - logsuser
+具体报错如下：su: cannot set user id: Resource temporarily unavailable
+#su: 无法设置用户ID: 资源暂时不可用
+
+#该普通用户运行java程序
+
+
+问题原因
+排查是服务器系统单个用户打开进程最大数限制导致
+
+问题处理
+nproc(单个用户可用的最大进程数量)
+主要修改系统 nproc值，即可解决问题，
+1.在limit文件追加下面两行；
+#vim  /etc/security/limits.conf  
+* soft nofile  65535
+* hard nofile 65535
+
+
+！！！注意，修改limits.conf 配置文件，需要重启主机才能生效！！！
+
+1.1修改/etc/pam.d/login；
+#vim /etc/pam.d/login
+session required pam_limits.so
+
+告诉Linux在用户完成系统登录后，应该调用pam_limits.so模块来设置系统对该用户可使用的各种资源数量的最大限制(包括用户可打开的最大文件数限制)。
+而pam_limits.so模块就会从/etc/security/limits.conf文件中读取配置来设置这些限制值
+
+2.修改 nproc 默认值1024 到65535
+centos 7.X以后新增了一个/etc/security/limits.d/20-nproc.conf 文件，用于控制nproc,这里面的默认配置是
+#vim /etc/security/limits.d/20-nproc.conf
+* soft nproc  65535
+* hard nproc  65535
+
+
+centos 6.X以后新增了一个/etc/security/limits.d/90-nproc.conf 文件，用于控制nproc,这里面的默认配置是
+#vim /etc/security/limits.d/90-nproc.conf
+* soft nproc  65535
+* hard nproc  65535
