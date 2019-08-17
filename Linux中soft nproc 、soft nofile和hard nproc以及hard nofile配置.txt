@@ -1,0 +1,29 @@
+"soft" 和 "hard" 的区别
+soft  xxx  : 代表警告的设定，可以超过这个设定值，但是超过后会有警告。
+hard  xxx  : 代表严格的设定，不允许超过这个设定的值。
+如：soft 设为1024，hard设为2048 ，则当你使用数在1~1024之间时可以随便使用，1024~2048时会出现警告信息，大于2048时，就会报错。
+
+
+"nproc" 和 "nofile"的区别
+nproc  : 是操作系统级别对每个用户创建的进程数的限制
+nofile : 是每个进程可以打开的文件数的限制
+
+
+修改系统的配置
+打开/etc/security/limits.conf (部分的系统是在/etc/security/limits.d/90-nproc.conf)
+
+#设置限制数量，第一列表示用户，* 表示所有用户
+
+soft nproc ：单个用户可用的最大进程数量(超过会警告);
+hard nproc：单个用户可用的最大进程数量(超过会报错);
+soft nofile  ：可打开的文件描述符的最大数(超过会警告);
+hard nofile ：可打开的文件描述符的最大数(超过会报错);
+
+
+！！！注意：需要重启后才生效，生产环境中慎重修改
+reboot
+注：
+1.一般soft的值会比hard小，也可相等。
+2./etc/security/limits.d/里面配置会覆盖/etc/security/limits.conf的配置
+3.只有root用户才有权限修改/etc/security/limits.conf
+4.如果limits.conf没有做设定，则默认值是1024
