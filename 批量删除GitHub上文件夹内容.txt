@@ -1,0 +1,19 @@
+于网页端的github上只能整个仓库删除或者文件夹下某个的文件,无法直接删除文件夹, 故而只能通过命令来解决：
+
+1.如果是是首次登陆，需要配置一下Git的个人信息
+# git config --global user.name "xx"
+# git config --global user.email "xx@xx.com"
+
+2.先同步Git
+# git clone https://github.com/xxx/linux.git
+
+#如果不是第一次登陆,通过git pull origin master 将远程仓库里面的项目拉下来
+
+3.指定删除的文件夹(删除一个命名为Python的文件夹,该操作不会删除本地克隆仓库的文件夹)
+# git rm -r --cached python 
+
+4.提交添加操作说明
+# git commit -m '删除了python'
+
+5.将本次更新推到github项目上去，删除完毕
+# git push -u origin master 
